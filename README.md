@@ -72,4 +72,4 @@ git push -u origin
 
 Atualize sua pagina no git, dentro do repositorio e terá novos arquivos:
 
-![](imagens/git.jpg)
+![](./imagens/git.png)
