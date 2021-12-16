@@ -115,7 +115,7 @@ sudo apt update
 sudo apt upgrade
 ```
 
-Olha que gracinha a interface do VirtualBox. 
+Olha que gracinha a interface do VirtualBox. :satisfied:
 
 ![](./imagens/virtual.png)
 
