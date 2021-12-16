@@ -91,7 +91,8 @@ Atualize sua pagina no git, dentro do repositorio e terá novos arquivos:
 
 ## INSTALANDO O VIRTUAL BOX
 
-Para executar os ambientes que criaremos com o vagrant, precisamos de um aplicativo, a minha escolha será o VirtualBox, mas existem outros, fica a seu critério. Ele é OpeSource =-) 
+Para executar os ambientes que criaremos com o vagrant, precisamos de um aplicativo, a minha escolha será o VirtualBox, mas existem outros, fica a seu critério. Ele é OpeSource :heart_eyes:
+
 
 Você consegue baixar o VirtualBox de acordo com seu sistema operacional em :
 
@@ -113,6 +114,8 @@ Eu precisei atualizar meu sistema operacional com os comandos, para o Virtual Bo
 sudo apt update
 sudo apt upgrade
 ```
+
+Olha que gracinha a interface do VirtualBox. 
 
 ![](./imagens/virtual.png)
 
