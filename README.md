@@ -70,6 +70,54 @@ Agora para subir o arquivo use o comando:
 git push -u origin
 ```
 
+Eu precisei de um comando a mais:
+
+```bash
+git pull
+```
+
+Qualquer duvida use este comando milagroso:
+
+> ele vai orientar como esta o arquivo, e quais são os próximos passos.
+
+
+```bash
+git status
+```
+
 Atualize sua pagina no git, dentro do repositorio e terá novos arquivos:
 
 ![](./imagens/git.png)
+
+## INSTALANDO O VIRTUAL BOX
+
+Para executar os ambientes que criaremos com o vagrant, precisamos de um aplicativo, a minha escolha será o VirtualBox, mas existem outros, fica a seu critério. Ele é OpeSource =-) 
+
+Você consegue baixar o VirtualBox de acordo com seu sistema operacional em :
+
+```html
+https://www.virtualbox.org/
+```
+
+Você vai precisar tambem de uma extensão.
+
+Esta disponivel no link:
+
+```html
+https://download.virtualbox.org/virtualbox/6.1.30/Oracle_VM_VirtualBox_Extension_Pack-6.1.30.vbox-extpack
+```
+
+Eu precisei atualizar meu sistema operacional com os comandos, para o Virtual Box iniciar:
+
+```bash
+sudo apt update
+sudo apt upgrade
+```
+
+![](./imagens/virtual.png)
+
+
+## INSTALANDO O VAGRANT
+
+
+Para ter um ambiente de produção precisamos desta ferramenta, conciliada a um aplicativo de virtualização de máquinas como o VirtualBox ou VMWare, o Vagrant é uma ferramenta de provisionamento de maquinas virtuais, ela cria uma imagem de um disco em uma pasta, com descrição de processador, memória, discos e conexões. 
