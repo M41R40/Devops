@@ -3,7 +3,7 @@ Com essas anotações pretendo praticar e aprender sobre as ferramentas mais uti
 pelos DEVOPS. 
 
 ## INSTALANDO O GIT. 
-Eu já tenho uma conta no git, segue lá (M41R40).
+Eu já tenho uma conta no git, segue lá **M41R40**
 Eu utilizo o ubuntu, então usei o comando no terminal na minha area de trabalho:
 
 
@@ -118,6 +118,40 @@ sudo apt upgrade
 Olha que gracinha a interface do VirtualBox. :satisfied:
 
 ![](./imagens/virtual.png)
+
+### INSTALANDO UMA ISO DO UBUNTU. 
+
+Uma ISO, é uma imagem de um sistema operacional pronto, facil de instalar, nesta vamos instalar o ubuntu, disponivel no site deles em:
+
+```html
+https://releases.ubuntu.com/18.04.6/ubuntu-18.04.6-live-server-amd64.iso?_ga=2.202179031.718787446.1639687321-193693467.1639687321
+```
+
+Lá no virtual box, você vai clicar em novo;
+
+- colocar o nome ubuntu;
+- escolher tipo linux;
+- versão ubuntu 64 bits;
+- clique em próximo;
+- tamanho 1024 mesmo;
+- clique em próximo;
+- vai criar um disco rígido virtual agora;
+- clique em criar;
+- escolha VMDK;
+- escolha dinamicamente alocado e próximo;
+- 10,00 GB tá bom, clique em criar. 
+
+> Adicionando a ISO do ubuntu.
+
+- dois cliques em cima da máquina nova;
+- aparecerá uma caixa para selecionar a imagem iso baixada;
+- configure a máquina conforme sua necessidade e com seu nome. 
+
+OBS: É muito trabalhoso na minha humilde opinião, mas é ótimo para o aprendizado. 
+
+
+![](./imagens/ubuntu2.png)
+
 
 
 ## INSTALANDO O VAGRANT
