@@ -141,7 +141,7 @@ Lá no virtual box, você vai clicar em novo;
 - escolha dinamicamente alocado e próximo;
 - 10,00 GB tá bom, clique em criar. 
 
-> Adicionando a ISO do ubuntu.
+### Adicionando a ISO do ubuntu.
 
 - dois cliques em cima da máquina nova;
 - aparecerá uma caixa para selecionar a imagem iso baixada;
@@ -158,3 +158,130 @@ OBS: É muito trabalhoso na minha humilde opinião, mas é ótimo para o aprendi
 
 
 Para ter um ambiente de produção precisamos desta ferramenta, conciliada a um aplicativo de virtualização de máquinas como o VirtualBox ou VMWare, o Vagrant é uma ferramenta de provisionamento de maquinas virtuais, ela cria uma imagem de um disco em uma pasta, com descrição de processador, memória, discos e conexões. 
+
+Faça download do vagrant no site:
+
+```html
+https://www.vagrantup.com/downloads
+```
+
+Faça download conforme seu sistema operacional, ou se já utilizar um linux, siga estes comandos em seu terminal conforme é orientado no site deles:
+
+```bash
+curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+
+sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+
+sudo apt-get update && sudo apt-get install vagrant
+
+```
+
+## Iniciando uma máquina ubuntu com o vagrant
+
+Crie uma pasta com o comando:
+
+```bash
+mkdir testevm
+```
+
+Dentro da pasta, crie um arquivo chamado *vagrantfile*
+
+```bash
+nano Vagrantfile
+```
+
+E neste arquivo cole esse texto:
+> é interessante se atentar a tabulação das linhas e lembrar de salvar o arquivo.
+
+```ruby
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+# essas linhas acima indicam a linguagem para o editor de texto
+
+VAGRANTFILE_API_VERSION = "2" # versão da API do Vagrant
+
+# Este bloco de ruby contém todas as atividades que o Vagrant
+# deve executar representadas pelo objeto que chamei de config
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+# config.vm cria um objeto que descreve uma máquina virtual.
+# Chamei esta vm de "testevm" e quero utilizar o Ubuntu Trusty
+# Indiquei que quero um IP privado para esta máquina
+	config.vm.define "testvm" do |testvm|
+		testvm.vm.box = "ubuntu/trusty64"
+		testvm.vm.network :public_network, ip: "192.168.0.190"
+	end
+	
+# Este bloco me dá acesso ao provedor da máquina virtual
+# (VirtualBox)
+# Configurei esta máquina com 1GB de memória
+	config.vm.provider "virtualbox" do |v|
+		v.customize ["modifyvm", :id, "--memory", "1024"]
+		end
+	end
+```
+
+Dentro da pasta, agora inicie esta máquina com o comando:
+> o virtualbox deve estar aberto.
+
+```bash
+vagrant up
+```
+Vai lá no seu virtualbox agora, vai ter uma máquina nova em execução com o nome da pasta que foi criada:
+
+![](./imagens/testevm.png)
+
+
+Agora se conecte a esta máquina com o comando:
+
+```bash
+vagrant ssh
+```
+Foi mais rápido criar um ubuntu pelo vagrant ne ?!  :heart_eyes:
+
+
+![](./imagens/ubuntuvagrant.png)
+
+
+Para destruir a máquina utilize o comando:
+
+```bash
+vagrant destroy
+```
+
+Caso queira apenas encerrar sua sessão:
+
+```bash
+vagrant halt
+```
+ 
+### Atualizando a máquina ubuntu e criando um servidor Web.
+
+Continuemos, agora vamos atualizar a máquina criada.
+> Certifique de que esta conectado a máquina com o vagrant ssh.
+
+```bash
+sudo apt-get update
+sudo apt-get install nginx
+```
+Abra no terminal local agora o ip que setou no arquivo de configuração do vagrant. :relieved:
+
+```html
+http://192.168.0.190
+```
+:heart:
+![](./imagens/nginx.png)
+
+
+No terminal digite os comandos:
+
+```bash
+sudo -s 
+echo "boa maira" > /usr/share/nginx/html/index.html
+```
+Agora atualize seu navegador na página do nginx.
+
+:boom:
+![](./imagens/boa.png)
+
+
+
