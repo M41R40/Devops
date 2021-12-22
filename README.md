@@ -176,7 +176,7 @@ sudo apt-get update && sudo apt-get install vagrant
 
 ```
 
-## Iniciando uma máquina ubuntu com o vagrant
+### Iniciando uma máquina ubuntu com o vagrant
 
 Crie uma pasta com o comando:
 
@@ -205,7 +205,7 @@ VAGRANTFILE_API_VERSION = "2" # versão da API do Vagrant
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 # config.vm cria um objeto que descreve uma máquina virtual.
 # Chamei esta vm de "testevm" e quero utilizar o Ubuntu Trusty
-# Indiquei que quero um IP privado para esta máquina
+# Indiquei que quero um IP publico para esta máquina
 	config.vm.define "testvm" do |testvm|
 		testvm.vm.box = "ubuntu/trusty64"
 		testvm.vm.network :public_network, ip: "192.168.0.190"
@@ -269,6 +269,7 @@ Abra no terminal local agora o ip que setou no arquivo de configuração do vagr
 http://192.168.0.190
 ```
 :heart:
+
 ![](./imagens/nginx.png)
 
 
@@ -281,7 +282,69 @@ echo "boa maira" > /usr/share/nginx/html/index.html
 Agora atualize seu navegador na página do nginx.
 
 :boom:
+
 ![](./imagens/boa.png)
+
+### Criando um arquivo de atualização e instalação do NGINX.
+
+Dentro da pasta **testvm** crie o arquivo em shell **webserver.sh** para atualização e instalação do NGINX, assim que rodar o vagrantfile. 
+
+```bash 
+nano webserver.sh
+```
+
+Adicione este código ao arquivo.
+
+```shell
+#!/bin/bash
+echo "Atualizando repositórios"
+sudo apt-get update
+echo "Instalando o nginx"
+sudo apt-get -y install nginx
+```
+
+Depois de salvar o arquivo, edite o **Vagrantfile** com o comando:
+
+```bash
+nano Vagrantfile 
+```
+Adicione a linha **testevm.vm.provision "shell", path: "webserver.sh"** para o vagrant rodar o arquivo de shell script, 
+
+```ruby
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2" 
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+	config.vm.define "testvm" do |testvm|
+		testvm.vm.box = "ubuntu/trusty64"
+		testvm.vm.network :public_network, ip: "192.168.0.190"
+		testevm.vm.provision "shell", path: "webserver.sh"
+	end
+	
+	config.vm.provider "virtualbox" do |v|
+		v.customize ["modifyvm", :id, "--memory", "1024"]
+		end
+	end
+```
+
+Salve todos os arquivos, depois utilize os comandos respectivamente para destruir e para criar novamente a máquina:
+
+```bash
+vagrant destroy
+vagrant up
+```
+
+> note que dessa vez não precisará se conectar com vagrant ssh, é só atulizar seu navegador que irá notar a instalação automatica do nginx. 
+
+
+
+
+
+
+
 
 
 
