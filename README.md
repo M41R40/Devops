@@ -339,7 +339,124 @@ vagrant up
 
 > note que dessa vez não precisará se conectar com vagrant ssh, é só atulizar seu navegador que irá notar a instalação automatica do nginx. 
 
+### Instalando o PHP5.
 
+Agora vamos modificar o arquivo **webserver.sh** para que ele instale o PHP5 na máquina, logo na inicialização do vagrant, então adicione a linha ao final do script : **sudo apt-get install -y php5-fpm** e os pacotes necessarios.
+
+
+```shell
+#!/bin/bash
+
+echo "Atualizando repositórios"
+sudo apt-get update
+echo "Instalando o nginx"
+sudo apt-get install nginx -y
+echo "Instalando o PHP5"
+sudo apt-get install php5-fpm php5-mysql php-soap php-xml-rpc php5-cli php5-json php5-gd -y
+```
+
+O diferencial desta vez é que não vamos destruir a máquinas vamos utilizar um comando novo para executar o provisionamento *vagrant provision*
+
+Siga os seguintes comandos em seu terminal local, dentro da pasta **testvm** :
+
+```bash
+vagrant halt  #encerra sessão
+vagrant up   #inicia sessão
+vagrant provision  # provisiona as mudanças realizadas
+vagrant ssh  #conecta a sessão
+```
+
+Abra este caminho na máquina criada:
+
+```bash
+cd /etc/nginx/sites-available/
+```
+
+
+> tem um arquivo default, deixa ele quieto. 
+
+Crie um arquivo de configuração seu de exemplo.
+
+```bash
+sudo nano maira.com
+```
+
+Dentro do arquivo adicione esse codigo, lembrando de trocar o nome do arquivo.
+
+```bash 
+server {
+        listen 80;
+        root /var/www/html;
+        index index.php index.html index.htm index.nginx-debian.html;
+        server_name maira.com;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+
+        location ~ \.php$ {
+                fastcgi_pass unix:/var/run/php/php5.5-fpm.sock;
+        }
+
+        location ~ /\.ht {
+                deny all;
+        }
+}
+```
+
+Após salvar o arquivo habilite seu novo bloco com um link simbolico no diretório **/etc/nginx/sites-available/** para o diretório **/etc/nginx/sites-enabled/** com o comando:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/maira.com /etc/nginx/sites-enabled/
+```
+
+E desvincule o arquivo padrão do diretório **/sites-enabled/**, com o comando:
+
+
+```bash
+sudo unlink /etc/nginx/sites-enabled/default
+```
+
+Crie um arquivo para erros de sintaxe com o comando:
+
+```bash
+sudo nginx -t
+```
+
+Agora recarregue o Nginx com o comando:
+```bash
+sudo service nginx restart
+```
+
+### Criando um arquivo PHP para teste.
+Crie a pasta que ficará responsavel por seu html, dentro do **/var/** com o comando:
+
+```bash
+mkdir /var/www
+```
+
+
+E dentro de **/www/** crie a pasta **/html/**:
+
+```bash
+mkdir html
+```
+
+Crie um arquivo **info.php** em **/var/www/html/** com o comando:
+
+```bash 
+sudo nano /var/www/html/info.php
+```
+Adicione o seguinte codigo ao arquivo:
+
+```php
+<?php
+
+phpinfo();
+
+?>
+```
+Salve e feche o arquivo, atualize a página web do seu servidor com o ip e o nome do arquivo **http://192.168.0.190/info.php**
 
 
 
