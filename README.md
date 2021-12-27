@@ -352,7 +352,7 @@ sudo apt-get update
 echo "Instalando o nginx"
 sudo apt-get install nginx -y
 echo "Instalando o PHP5"
-sudo apt-get install php5-fpm php5-mysql php-soap php-xml-rpc php5-cli php5-json php5-gd -y
+sudo apt-get install php5-fpm  -y
 ```
 
 O diferencial desta vez é que não vamos destruir a máquinas vamos utilizar um comando novo para executar o provisionamento *vagrant provision*
@@ -363,105 +363,273 @@ Siga os seguintes comandos em seu terminal local, dentro da pasta **testvm** :
 vagrant halt  #encerra sessão
 vagrant up   #inicia sessão
 vagrant provision  # provisiona as mudanças realizadas
-vagrant ssh  #conecta a sessão
 ```
 
-Abra este caminho na máquina criada:
+## Instalando o ANSIBLE.
+
+
+O ansible é  feito em python e funciona em muitas plataformas, é uma ferramenta local para seu servidor de dados, se comunica com as máquinas virtuais por meio de SSH, possui bibliotecas completas, que fornecem módulos paara provisionamento de máquinas e aplicações remotamente, provisionar é instalar e configurar itens de infraestrutura em máquinas e banco de dados por exemplo. 
+
+Localmente, se estiver usando o ubuntu como eu, siga estes comandos para a instalação do ansible:
 
 ```bash
-cd /etc/nginx/sites-available/
+sudo apt-get install software-properties-common
+sudo apt-add-repository ppa:ansible/ansible
+sudo apt-get update
+sudo apt-get install ansible
 ```
 
-
-> tem um arquivo default, deixa ele quieto. 
-
-Crie um arquivo de configuração seu de exemplo.
+Para testar a instalação, use o comando:
+> deve aparecer a ajuda do ansible.
 
 ```bash
-sudo nano maira.com
+ansible-playbook -h
 ```
 
-Dentro do arquivo adicione esse codigo, lembrando de trocar o nome do arquivo.
+Dessa forma:
+
+![](./imagens/ansibleajuda.png)
+
+
+
+### Instalando o nginx com o ansible no formato YAML. 
+
+
+
+**YAML** é um formato que serve para serialização e transmissão de
+dados. Ele é composto de palavras-chaves separadas de um valor
+por : (dois pontos). 
+Seus dados podem ser chaves e valores, listas
+de chaves e valores e dicionários.
+
+Neste capítulo vamos criar um novo arquivo dentro da pasta testvm, chamado **webserver.yml**:
+
+```bash
+nano webserver.yml
+```
+Dentro do arquivo adicione o código:
+
+> se atente aos espaçoes e ao sinal de dois pontos (:).
+
+```yaml  
+- hosts: all
+  become: true
+  user: vagrant
+  tasks:
+    - name: "Atualiza pacotes"
+      shell: sudo apt-get update
+
+    - name: "Instala o nginx"
+      shell: sudo apt-get -y install nginx
+```
+
+### Modificando o Vangrantfile para que identifique o arquivo webserver.yml.
+
+
+Dentro da pasta testvm, edite o arquivo **Vangrantfile** para que ele leia o arquivo **yml** em sua inicialização com o comando:
+
+```bash
+nano Vangrantfile
+```
+
+Adicione após o **ip** e antes do **config.vm.provider** o seguinte código:
 
 ```bash 
+	testvm.vm.provision "ansible" do |ansible|
+		ansible.playbook = "webserver.yml"
+		ansible.verbose = "vvv"
+	end
+end
+```
+
+O código completo é:
+
+```ruby
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.vm.define "testvm" do |testvm|
+    testvm.vm.box = "ubuntu/trusty64"
+    testvm.vm.network :private_network, ip: "192.168.33.21"
+    
+    testvm.vm.provision "ansible" do |ansible|
+          ansible.playbook = "webserver1.yml"
+	  ansible.verbose = "vvv"
+    end
+
+  end
+
+  config.vm.provider "virtualbox" do |v|
+    v.customize ["modifyvm", :id, "--memory", "1024"]
+  end
+
+end
+```
+
+Agora suba a máquina testvm, novamente, dentro da pasta testvm com o comando:
+
+```bash
+vagrant up
+```
+
+Se você não destruiu a máquina no capítulo anterior pode ter problemas, então use o comando **vagrant destroy**.
+
+Depois de subir a máquina se você tiver uma saída semelhante a esta, esta tudo ok com a instalação.
+
+![](./imagens/final.png)
+
+
+
+
+## Instalando o Wordpress.
+
+
+Montaremos um playbook que instale e configure um WordPress completo, com o nginx como servidor, o PHP e o Mysql. 
+
+Crie uma nova pasta, nomeada **blogvm** com o comando:
+
+```bash
+mkdir blogvm
+```
+
+Crie dentro da pasta um arquivo nomeado **Vangrantfile** com o comando:
+
+```bash 
+sudo nano Vangrantfile
+```
+Adicione o código a seguir em seu arquivo, ele terá previamente configurações ansible, para o arquivo que criaremos depois, não esqueça de salvar antes de fechar o arquivo.
+
+```ruby
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.vm.define "blogvm" do |blogvm|
+    blogvm.vm.box = "ubuntu/trusty64"
+    blogvm.vm.network :public_network, ip: "192.168.55.3"
+
+    blogvm.vm.provision "ansible" do |ansible|
+      ansible.playbook = "blog.yml"
+      ansible.verbose = "vvv"
+    end
+
+  end
+
+  config.vm.provider "virtualbox" do |v|
+    v.customize ["modifyvm", :id, "--memory", "1024"]
+  end
+
+end
+```
+
+Crie no mesmo diretório, um arquivo nomeado **blog.yml** com o comando:
+
+```bash 
+sudo nano blog.yml
+```
+
+Adicione por enquanto neste arquivo o seguinte código:
+
+```yaml
+<?php phpinfo(); ?>
+
+- hosts: all
+  become: true
+  user: vagrant
+  tasks:
+    - name: "Atualiza pacotes e instala nginx"
+      apt: name=nginx state=latest update_cache=yes install_recommends=yes
+
+    - name: "Instala PHP-FPM"
+      apt: name=php5-fpm state=latest install_recommends=yes
+
+    - name: "Instala MySQL"
+      apt: name=mysql-server state=latest install_recommends=yes
+
+    - name: "Cria diretório /opt/wordpress"
+      shell: mkdir -p /opt/wordpress
+
+    - name: "Copia configuração de blog.nginx para
+      /etc/nginx/sites-available/blog"
+      copy: src=blog.nginx dest=/etc/nginx/sites-available/blog
+
+    - name: "Ativa o site"
+      shell: ln -fs /etc/nginx/sites-available/blog /etc/nginx/sites-enabled/blog
+
+    - name: "Apaga o site default"
+      shell: rm -f /etc/nginx/sites-enabled/default
+
+    - name: "Reinicia o NGINX"
+      shell: service nginx restart
+
+    - name: "Cria uma pagina de teste do PHP"
+      copy: src=test.php dest=/opt/wordpress
+```
+
+Esses arquivos são finais do capítulo anterior, a melhor maneira de utilizar o php com o nginx é a versão FPM.
+
+Agora crie um arquivo de configuração no nginx para que o site saiba interpretar arquivos com extensão PHP. 
+
+
+```bash
+sudo nano blog.nginx
+```
+
+Adicione o código a seguir para configura-lo:
+
+```conf
 server {
         listen 80;
-        root /var/www/html;
-        index index.php index.html index.htm index.nginx-debian.html;
-        server_name maira.com;
+        server_name blog localhost;
+
+        access_log /var/log/nginx/blog.access.log;
+
+        root /opt/wordpress;
+        index index.html index.htm index.php;
 
         location / {
-                try_files $uri $uri/ =404;
+                try_files $uri $uri/ /index.html;
         }
-
         location ~ \.php$ {
-                fastcgi_pass unix:/var/run/php/php5.5-fpm.sock;
-        }
-
-        location ~ /\.ht {
-                deny all;
+                try_files $uri =404;
+                fastcgi_pass unix:/var/run/php5-fpm.sock;
+                fastcgi_index index.php;
+                fastcgi_param SCRIPT_FILENAME
+                $document_root$fastcgi_script_name;
+                include fastcgi_params;
         }
 }
+
 ```
 
-Após salvar o arquivo habilite seu novo bloco com um link simbolico no diretório **/etc/nginx/sites-available/** para o diretório **/etc/nginx/sites-enabled/** com o comando:
-
-```bash
-sudo ln -s /etc/nginx/sites-available/maira.com /etc/nginx/sites-enabled/
-```
-
-E desvincule o arquivo padrão do diretório **/sites-enabled/**, com o comando:
-
-
-```bash
-sudo unlink /etc/nginx/sites-enabled/default
-```
-
-Crie um arquivo para erros de sintaxe com o comando:
-
-```bash
-sudo nginx -t
-```
-
-Agora recarregue o Nginx com o comando:
-```bash
-sudo service nginx restart
-```
-
-### Criando um arquivo PHP para teste.
-Crie a pasta que ficará responsavel por seu html, dentro do **/var/** com o comando:
-
-```bash
-mkdir /var/www
-```
-
-
-E dentro de **/www/** crie a pasta **/html/**:
-
-```bash
-mkdir html
-```
-
-Crie um arquivo **info.php** em **/var/www/html/** com o comando:
+O desafio deste capítulo é conseguir visualizar a tela de informações impressas do PHP, no navegador com o ip escolhido, para isso vamos criar um arquivo **test.php** com o comando:
 
 ```bash 
-sudo nano /var/www/html/info.php
+sudo nano test.php
 ```
-Adicione o seguinte codigo ao arquivo:
+adicione o código padrão para exibir as informações do php dentro do arquivo:
 
 ```php
-<?php
+<?php phpinfo(); ?>
 
-phpinfo();
-
-?>
 ```
-Salve e feche o arquivo, atualize a página web do seu servidor com o ip e o nome do arquivo **http://192.168.0.190/info.php**
 
+Salve o arquivo, e no terminal dentro da pasta **blogvm**, execute o comando para iniciar o vagrant:
 
+```bash 
+vagrant up
+```
 
+Depois abre seu navegador e digite o ip que setou no vagrantfile, com barra **/test.php** e deve visualizar a pagina do php com algumas informações. 
 
-
-
+![](./imagens/php.png)
+ 
 
 
