@@ -485,7 +485,9 @@ Depois de subir a máquina se você tiver uma saída semelhante a esta, esta tud
 
 
 
-## Instalando o Wordpress.
+## Instalando um servidor completo. 
+
+### PHP
 
 
 Montaremos um playbook que instale e configure um WordPress completo, com o nginx como servidor, o PHP e o Mysql. 
@@ -631,5 +633,119 @@ Depois abre seu navegador e digite o ip que setou no vagrantfile, com barra **/t
 
 ![](./imagens/php.png)
  
+ 
+Até aqui temos somente um página com um interpretador de código funcionando, agora vamos prosseguir a instalação dos dois ultimos serviços. 
+
+Pode destruir a máquina, para que não haja conflito no código que vamos adicionar a seguir ok.
+
+```bash
+vagrant halt
+vagrant destroy
+```
+
+ 
+### Mysql e Wordpress.
+
+ 
+Para prosseguir a instalar do Mysql vamos utilizar as extensões para PHP, a biblioteca de python. Deixaremos configurado no arquivo **blog.yml** informações para iniciar o Mysql, para criar o usuario e uma senha, o mesmo para o Wordpress, 
+mas vamos corrigir algumas permissões nele antes. Para que não haja acesso ao grupo **www-data**.
+
+Dentro da pasta blogvm, edite o arquivo **blog.yml** com o comando a seguir, para adicionar as informações explicadas anteriormente.
 
 
+```bash 
+sudo nano blog.yml
+```
+
+Adicione esse código ao arquivo, excluindo as informações anteriores. 
+
+```yaml
+- hosts: all
+  become: true
+  user: vagrant
+  vars:
+    mysql_root_password: root
+    mysql_wp_user: wordpress
+    mysql_wp_password: wordpress
+    wordpress_db_name: wordpress
+
+  tasks:
+    - name: "Atualiza pacotes e instala nginx"
+      apt: name=nginx state=latest update_cache=yes install_recommends=yes
+
+    - name: "Instala PHP-FPM"
+      apt: name=php5-fpm state=latest install_recommends=yes
+
+    - name: "Instala MySQL"
+      apt: name=mysql-server state=latest install_recommends=yes
+
+    - name: "Instala Extensões de MySQL para PHP"
+      apt: name=php5-mysql state=latest install_recommends=yes
+
+    - name: "Instala biblioteca python-mysqldb"
+      apt: name=python-mysqldb state=latest install_recommends=yes
+
+    - name: "Copia configuração de blog.nginx para /etc/nginx/sites-available/blog"
+      copy: src=blog.nginx dest=/etc/nginx/sites-available/blog
+
+    - name: "Apaga o site default"
+      file: path=/etc/nginx/sites-enabled/default state=absent
+
+    - name: "Ativa o site"
+      file: src=/etc/nginx/sites-available/blog  dest=/etc/nginx/sites-enabled/blog state=link
+
+    - name: "Reinicia NGINX"
+      service: name=nginx state=restarted
+
+    - name: "Cria /opt/wordpress"
+      file: dest=/opt/wordpress mode=755 state=directory owner=www-data
+
+    - name: "Download do Wordpress"
+      get_url: url=https://wordpress.org/latest.tar.gz  dest=/tmp/latest.tar.gz
+
+    - name: "Abre wordpress em /opt/wordpress"
+      unarchive: src=/tmp/latest.tar.gz dest=/opt copy=no
+
+    - name: "Corrige permissões"
+      file: path=/opt/wordpress recurse=yes owner=www-data group=www-data
+
+    - name: "Inicia MySQL"
+      service: name=mysql state=started enabled=true
+
+    - name: "Cria .my.cnf"
+      template: src=my.cnf.j2 dest=~/.my.cnf mode=0600
+
+    - name: "Cria senha de root para root@mysql"
+      mysql_user: name=root
+              password="{{ mysql_root_password }}"
+              check_implicit_admin=yes
+              priv="*.*:ALL,GRANT"
+              state=present
+              host="{{ item }}"
+      with_items:
+        - "{{ ansible_hostname }}"
+        - 127.0.0.1
+        - localhost
+    - name: "Cria wordpress database"
+      mysql_db: name=wordpress
+                login_user=root
+                login_password="{{ mysql_root_password }}"
+                state=present
+    - name: "Cria usuário wordpress"
+      mysql_user: name="{{ mysql_wp_user }}"
+                password="{{ mysql_wp_password}}"
+                priv="{{ wordpress_db_name }}".*:ALL
+                check_implicit_admin=yes
+                login_user=root
+                login_password="{{ mysql_root_password }}"
+                host="{{ item }}"
+                state=present
+      with_items:
+        - "{{ ansible_hostname }}"
+        - 127.0.0.1
+        - localhost
+```
+Há informações novas nesse código, como **vars**, que nada mais é do que variaveis para introduzir de forma prática no estilo template conforme a engine do jinja2. 
+
+Vai demorar, um pocão  :joy:  :joy: :joy: :joy:
+ 
