@@ -747,5 +747,11 @@ Adicione esse código ao arquivo, excluindo as informações anteriores.
 ```
 Há informações novas nesse código, como **vars**, que nada mais é do que variaveis para introduzir de forma prática no estilo template conforme a engine do jinja2. 
 
-Vai demorar, um pocão  :joy:  :joy: :joy: :joy:
+Por fim, o comando:
+
+```bash 
+vagrant up
+```
+
+E paciência, pos vai demorar, um pocão.  :joy:  :joy: :joy: :joy:
  
