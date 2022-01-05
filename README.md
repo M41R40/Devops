@@ -753,5 +753,198 @@ Por fim, o comando:
 vagrant up
 ```
 
-E paciência, pos vai demorar, um pocão.  :joy:  :joy: :joy: :joy:
+E paciência, pois vai demorar, um pocão.  :joy:  :joy: :joy: :joy:
  
+ 
+ 
+## Proxy reverso.
+
+Neste tópico o autor orienta como configurar uma aplicação simples na porta 10000, para obter resposta por meio de uma API de echo, recebendo um POST e imprimindo um valor de volta, agora se o método chamado for GET, outra mensagem aparecerá. 
+
+Crie uma pasta nomeada **python-nginx**:
+ 
+```bash
+mkdir python-nginx
+```
+ 
+Crie dentro do diretorio **python-nginx** o arquivo **http_server.py**:
+ 
+```bash
+nano http_server.py
+```
+
+Adicione o código em python a ele:
+
+ 
+```python
+#!/usr/bin/python
+
+import SimpleHTTPServer
+import SocketServer
+import cgi
+import socket
+
+PORT=10000
+
+class ReuseAddrTCPServer(SocketServer.TCPServer):
+    def server_bind(self):
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.socket.bind(self.server_address)
+
+class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+    def do_GET(self):
+
+        self.wfile.write("<html><body><form action='/' method=POST>")
+        self.wfile.write("<textarea name=msg rows='10' cols='100'></textarea>")
+        self.wfile.write("<br><input type='submit' name='submit'>")
+        self.wfile.write("</form></body></html>")
+        return
+
+    def do_POST(self):
+        self.send_response(200)
+        self.end_headers()
+        form = cgi.FieldStorage(
+            fp=self.rfile,
+            headers=self.headers,
+            environ={'REQUEST_METHOD':'POST',
+                     'CONTENT_TYPE':self.headers['Content-Type'],
+                     })
+
+        for field in form.keys():
+            self.wfile.write('\t%s=%s\n' % (field, form[field].value))
+
+        return
+
+ReuseAddrTCPServer(("", PORT), ServerHandler).serve_forever()
+```
+
+Esse código cria uma servidor HTTP com as bibliotecas padrão de Python, escuta na porta 10000 e só responde a requests HTTP do tipo GET e POST.
+
+Ainda dentro desse diretorio  **python-nginx** crie o arquivo **Vagrantfile**:
+
+```bash
+nano Vagrantfile
+```
+
+Adicione a ele a seguintes informações:
+
+```ruby
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.vm.define "webapp" do |webapp|
+    webapp.vm.box = "ubuntu/trusty64"
+    webapp.vm.network :public_network, ip: "192.168.56.100"
+    
+    webapp.vm.provision "ansible" do |ansible|
+          ansible.playbook = "web.yml"
+	  ansible.verbose = "vvv"
+    end
+
+  end
+
+  config.vm.provider "virtualbox" do |v|
+    v.customize ["modifyvm", :id, "--memory", "1024"]
+  end
+
+end
+```
+
+Ainda precisamos de mais um arquivo referente ao provisionamento do Ansible, então dentro do diretorio  **python-nginx**  crie o arquivo **web.yml** com o comando a seguir:
+
+```bash
+nano web.yml
+```
+
+Adicione a ele as seguintes informações:
+
+```yaml
+- hosts: all
+  become: true
+  user: vagrant
+  roles:
+    - common
+    - nginx
+    - app
+```
+
+Abra dois terminais agora. 
+
+Na pasta **python-nginx** dê o comando para executar a máquina. 
+
+```bash
+vagrant up
+```
+
+No outro terminal, execute o arquivo **.py** dentro da pasta  **python-nginx** tambem.
+
+```python
+python http_server.py
+```
+> Instale o python2, com python3 esse codigo não vai funcionar. (pedir correções para o autor :sunglasses: )
+
+```bash
+sudo apt install python2
+```
+
+Agora no outro terminal execute o comando curl para se comunicar pela porta 10000:
+
+Esse é com o POST
+```bash 
+curl -X POST -d "msg=Maira&oi=Maravilhosa" http://localhost:10000
+```
+
+Mas funciona com o GET tambem:
+
+```bash
+curl GET -d "msg=Maira&oi=Maravilhosa" http://localhost:10000
+```
+
+Vamos visualizar agora, primeiro os comandos POST e GET que retornaram as mensagens enviadas corretamente:
+
+Este é o print da tela onde o comando curl esta sendo executado. 
+
+![](./imagens/postcerto.png)
+
+
+Esse é o print da tela onde o código python esta sendo executado.
+
+![](./imagens/capturacerta.png)
+
+
+Esse servidor não tem o mínimo necessario para uma boa análise de logs, mas servirá para utilizar a plicação Python e o nginx com proxy reverso.
+
+
+
+Vamos organizar as pastas e criar arquivos para copiar o **http_server.py** pra dentro do servidor.
+
+Então dentro 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
