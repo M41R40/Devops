@@ -920,31 +920,148 @@ Esse servidor não tem o mínimo necessario para uma boa análise de logs, mas s
 
 
 
-Vamos organizar as pastas e criar arquivos para copiar o **http_server.py** pra dentro do servidor.
+## Proxy reverso e wordpress em duas máquinas. 
 
-Então dentro 
+Vamos melhorar o playbook e criar um arquivo com o Vagrant que tem mais de uma máquina, para termos dois wordpress funcionando, o objetivo é que um banco de dados fique em uma e o Wordpress em outra. 
+
+Crie a pasta **blogvm-Wordpress** com o comando:
+
+```bash
+mkdir blogvm-Wordpress
+```
+
+Dentro dela crie o arquivo Vagrantfile com o comando:
+
+```bash
+nano Vagrantfile
+```
+
+Adicione ao arquivo o código:
+
+```ruby
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
 
 
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.vm.define "web" do |webvm|
+    webvm.vm.box = "ubuntu/trusty64"
+    webvm.vm.network :public_network, ip: "192.168.56.23"
+    
+    webvm.vm.provision "ansible" do |ansible|
+          ansible.playbook = "blog.yml"
+	  ansible.verbose = "vvv"
+	  ansible.groups = {
+	    "web" => ["192.168.56.23"],
+	    "db" =>  ["192.168.56.24"],
+          }
+	  ansible.limit = "web"
+    end
+  end
+  
+  config.vm.define "db" do |dbvm|
+    dbvm.vm.box = "ubuntu/trusty64"
+    dbvm.vm.network :public_network, ip: "192.168.56.24"
+    
+    dbvm.vm.provision "ansible" do |ansible|
+          ansible.playbook = "blog.yml"
+	  ansible.verbose = "vvv"
+	  ansible.groups = {
+	    "web" => ["192.168.56.23"],
+	    "db" =>  ["192.168.56.24"],
+	 }
+	  ansible.limit = "db"
+    end
+  end
+
+  config.vm.provider "virtualbox" do |v|
+    v.customize ["modifyvm", :id, "--memory", "1024"]
+  end
+
+end
+```
 
 
+Agora vamos informar ao **Ansible** as configurações (roles), de cada máquina.
+
+Primeiro crie o arquivo **db.yml** dentro de blogvm-Wordpress com o comando:
+
+```bash
+nano bd.yml
+```
+
+Adicione o código:
+
+```yaml
+- hosts: db
+  become: true
+  user: vagrant
+  vars_files:
+    - vars/mysql.yml
+  roles:
+    - common
+    - mysql
+```
+
+Segundo crie o arquivo **web.yml** com o comando:
+
+```bash
+nano web.yml
+```
+Adicione o código ao arquivo
+
+```yaml
+- hosts: web
+  become: true
+  user: vagrant
+  roles:
+    - common
+    - php
+    - nginx
+    - wordpress
+```
+
+Atualize o arquivo **blog.yml** para o seguinte código:
+
+```yaml
+- hosts: web
+  become: True
+  user: vagrant
+  roles:
+    - common
+    - php
+    - nginx
+    - wordpress
+
+- hosts: db
+  sudo: True
+  user: vagrant
+  vars_files:
+    - vars/mysql.yml
+  roles:
+    - common
+    - mysql
+```
 
 
+Com esses arquivos já é possivel subir as máquinas.
+
+```bash
+vagrant up
+```
 
 
+Vai demorar um pouco. Aguarde !
 
+Depois pode se conectar as máquinas pelo comando:
 
+```bash
+vagrant ssh db ou web
+```
 
+Mas se abrir o virtual box verá que há duas máquinas com os respectivos nomes criadas em execução.
 
-
-
-
-
-
-
-
-
-
-
-
- 
-
+![](./imagens/123.png)
